@@ -10,11 +10,18 @@
 
 namespace beep;
 
+// BeepBeep requirements
+require_once __DIR__ . DIRECTORY_SEPARATOR . 'Application.php';
+require_once __DIR__ . DIRECTORY_SEPARATOR . 'Request.php';
+require_once __DIR__ . DIRECTORY_SEPARATOR . 'Response.php';
+require_once __DIR__ . DIRECTORY_SEPARATOR . 'Route.php';
+require_once __DIR__ . DIRECTORY_SEPARATOR . 'Router.php';
+
 /**
  * Beep is the base class for configuring and running the Beep Application. The 
  * use of this class is optional.
  */
-class beep 
+class beep
 {
     /**
      * Beep version
