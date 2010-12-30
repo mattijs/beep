@@ -51,7 +51,12 @@ class Request
     public $port = 80;
     
     /**
-     * Request path
+     * 
+     */
+    public $baseUrl = '';
+    
+    /**
+     * Request path without the application base url
      * @var string
      */
     public $path = '/';
@@ -62,18 +67,11 @@ class Request
      */
     public $query = array();
     
-    /**
-     * Request fragment
-     * @var string
-     */
-    public $fragment = '';
-    
     /** **/
     
     /**
      * Construct a new Request object
      * @todo Don't trust $_SERVER['PATH_INFO']: implement real path finding
-     * @todo Parse request fragment
      */
     public function __construct()
     {
@@ -82,8 +80,37 @@ class Request
         $this->scheme   = empty($_SERVER['HTTPS']) ? 'http' : 'https';
         $this->host     = $_SERVER['SERVER_ADDR'];
         $this->port     = $_SERVER['SERVER_PORT'];
-        $this->path     = isset($_SERVER['PATH_INFO']) ? $_SERVER['PATH_INFO'] : $_SERVER['REQUEST_URI'];
         $this->query    = $this->chopQueryString($_SERVER['QUERY_STRING']);
+        
+        // Parse the requested path
+        $this->parsePath();
+    }
+    
+    /**
+     * Parses the requested URL extracting the base url and path
+     */
+    protected function parsePath()
+    {
+        // Get the baseUrl from the PHP_SELF variable
+        $this->baseUrl = '/' . ltrim($_SERVER['PHP_SELF'], '/');
+        
+        // Parse the request path
+        if (isset($_SERVER['PATH_INFO'])) {
+            $this->path = $_SERVER['PATH_INFO'];
+        }
+        else if (isset($_SERVER['REQUEST_URI'])) {
+            $this->path = rawurldecode(
+                parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH)
+            );
+        }
+        
+        // Santize the path
+        $this->path = '/' . ltrim($this->path, '/');
+        
+        // Check if it contains the baseUrl
+        if (0 === strpos($this->path, $this->baseUrl)) {
+            $this->path = '/' . ltrim(substr($this->path, strlen($this->baseUrl)), '/');
+        }
     }
     
     /**
