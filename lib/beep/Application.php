@@ -41,7 +41,7 @@ class Application
      */
     public function configure(array $options)
     {
-        $this->config += $options;
+        $this->config = $options + $this->config;
     }
     
     /**
@@ -99,8 +99,56 @@ class Application
         // Add function output to Response
         $response->appendBody($output);
         
+        // Check what type of action to take
+        if (is_string($action)) {
+            // Add the result of the action to the body
+            $response->appendBody($action);
+        } else if (is_array($action) && isset($action['view'])) {
+            // Construct the view path
+            $view = $action['view'];
+            unset($action['view']);
+            
+            // Do some rendering
+            $rendered = $this->render($view, $action);
+            $response->appendBody($rendered);
+        }
+        
         // Send the response
         $response->send();
+    }
+    
+    /**
+     * Render a view
+     * @param string view   The path to the view to render
+     * @param array $locals The local variables that need to be available in the 
+     *                      view
+     * @return string       The rendered view
+     */
+    public function render($view, $locals)
+    {
+        // Check the view suffix
+        if (0 !== strrpos($view, $this->config('suffix'))) {
+            $view .= $this->config('suffix');
+        }
+        
+        // Build the full path
+        $view = rtrim($this->config('views'), DIRECTORY_SEPARATOR) . DIRECTORY_SEPARATOR . $view;
+        
+        // Check if the view exists
+        if (!file_exists($view)) {
+            throw new \Exception("View '{$view}' does not exist");
+        }
+        
+        // Render the view
+        $renderer = function($file, $locals) {
+            extract($locals);
+            unset($locals);
+            ob_start();
+            include $file;
+            return ob_get_clean();
+        };
+        
+        return $renderer($view, $locals);
     }
     
     /**
